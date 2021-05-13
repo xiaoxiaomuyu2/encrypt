@@ -1,11 +1,14 @@
 #include "sender.h"
 
+void sendInteger(int sock, int num);
+
 int main(){
     int serv_sock=getServerSocket("192.168.142.128",8000);
     printf("Sender socket ready.\n");
     printf("Waiting for connection...\n");
     int clnt_sock=waitForConnection(serv_sock);
     printf("Connection built.\n");
+    sendInteger(clnt_sock, 888);
     //1024-bits,RSA_F4-e_value,no callback
     RSA *ClientRSA=RSA_generate_key(1024, RSA_F4, NULL, NULL);
     //print the rsa.
@@ -74,4 +77,9 @@ int main(){
     RSA_free(EncryptRsa);
     close(serv_sock);
     return 0;
+}
+
+void sendInteger(int sock, int num) {
+    char* data = (char*)(&num);
+    write(sock, data, sizeof(int));
 }

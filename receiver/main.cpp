@@ -2,6 +2,8 @@
 
 #include "receiver.h"
 
+int receiveInteger(int sock);
+
 int main()
 {
     //get socket
@@ -18,6 +20,9 @@ int main()
     }else{
         printf("connection built!\n");
     }
+    //try
+    int tryReceive = receiveInteger(sock);
+    printf("the number is %d!\n", tryReceive);
     //receive public key and key length
     unsigned char buffer[100000];
     unsigned char *b_f=buffer;
@@ -72,4 +77,11 @@ int main()
     RSA_free(EncryptRsa);
     close(sock);
     return 0;
+}
+
+int receiveInteger(int sock) {
+    int res;
+    char* data = (char*)(&res);
+    read(sock, data, sizeof(int));
+    return res;
 }
