@@ -51,8 +51,9 @@ int main()
         printf("error for encrypt is %s\n",ERR_error_string(ERR_get_error(),szErrMsg));
     }
     else{
+        printf("The seed length is %d\n", SEED_LEN);
         printf("The seed is %s\n\n\n\n\n",seed);
-        //printf("The seed after encryption is %s\n\n\n\n\n",outseed);
+        printf("The seed after encryption is %s\n\n\n\n\n",outseed);
     }
     //send encrypted seed
     sendSeed(outseed,SEED_LEN,sock);
