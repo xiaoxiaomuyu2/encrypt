@@ -1,10 +1,10 @@
 #include "receiver.h"
 
-int n, e;
-int encode(int m, int e, int n);
+int n, e;//public key of RSA
 void sendInteger(int sock, int num);
 int receiveInteger(int sock);
-void my_RSA_public_encrypt(int length, unsigned char* src, int* dst);
+int my_RSA_encrypt_char(int m, int e, int n);//encrypt single char
+void my_RSA_public_encrypt(int length, unsigned char* src, int* dst);//encrypt string
 
 int main()
 {
@@ -22,13 +22,13 @@ int main()
     }else{
         printf("connection built!\n");
     }
-    //try
-    int tryReceive = receiveInteger(sock);
-    printf("the number is %d!\n", tryReceive);
+    
+    //receive public key
     n = receiveInteger(sock);
     e = receiveInteger(sock);
     printf("the received public key is n = %d, e = %d.\n", n, e);
     
+    //encrypt process
     unsigned char seed[SEED_LEN];
     int outseed[SEED_LEN];
     unsigned char ranstr[SEED_LEN];
@@ -38,10 +38,9 @@ int main()
     my_RSA_public_encrypt(SEED_LEN, seed, outseed);
     printf("The seed is %s\n\n\n\n\n", seed);
     printf("The seed after encryption is %d\n\n\n\n\n", outseed[0]);
-    sendSeed((unsigned char*)outseed, SEED_LEN * sizeof(int), sock);
     
-    //char c = 'z';
-    //sendInteger(sock, encode((int)c, e, n));
+    //send encrypted seed
+    sendSeed((unsigned char*)outseed, SEED_LEN * sizeof(int), sock);
     
     /*
     //receive public key and key length
@@ -85,7 +84,7 @@ int main()
     sendSeed(outseed,SEED_LEN,sock);
     */
     
-    /*
+    
     unsigned char data_after_encrypt[16];
     unsigned char data_after_decrypt[16];
     unsigned char aesSeed[32];
@@ -98,25 +97,23 @@ int main()
         memset(data_after_encrypt,0,sizeof(data_after_encrypt));
         recvFile(data_after_encrypt,data_after_decrypt,&AESDecryptKey,sock);
     }
-    RSA_free(EncryptRsa);
-    */
+    //RSA_free(EncryptRsa);
+    
     close(sock);
     return 0;
 }
 
 void my_RSA_public_encrypt(int length, unsigned char* src, int* dst) {
     for(int i = 0; i < length; i++) {
-        dst[i] = encode((int)(src[i]), e, n);
+        dst[i] = my_RSA_encrypt_char((int)(src[i]), e, n);
     }
 }
 
-int encode(int m, int e, int n) {
-	//printf("encode function input: m=%d,e=%d, n=%d\n", m, e, n); 
+int my_RSA_encrypt_char(int m, int e, int n) {
 	int c = 1;
 	for(int i = 0; i < e; i++) {
 		c = (c * m) % n;
 	}
-	//printf("encode function output: c=%d\n", c);
 	return c;
 }
 
