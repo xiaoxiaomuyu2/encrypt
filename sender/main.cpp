@@ -1,12 +1,12 @@
 #include "sender.h"
 #define SEED_LEN 128
 
-int n, d, e;//(n, e) is public key. (n, d) is private key
+int n, d, e;//(n, e) is RSA public key. (n, d) is private key
 void sendInteger(int sock, int num);
 int receiveInteger(int sock);
-void my_RSA_generate_key();
-int decode(int c, int d, int n);
-void my_RSA_private_decrypt(int length, int* src, unsigned char* dst);
+void my_RSA_generate_key();//generate public key and private key
+int my_RSA_decrypt_char(int c, int d, int n);//decrypt single char
+void my_RSA_private_decrypt(int length, int* src, unsigned char* dst);//decrypt string
 
 int main(){
     int serv_sock=getServerSocket("192.168.142.128",8000);
@@ -14,25 +14,27 @@ int main(){
     printf("Waiting for connection...\n");
     int clnt_sock=waitForConnection(serv_sock);
     printf("Connection built.\n");
-    sendInteger(clnt_sock, 888);
+    
+    //generate and print RSA key
     my_RSA_generate_key();
     printf("The public key is n = %d, e = %d.\n", n, e);
+    
+    //send RSA public key to receiver
     sendInteger(clnt_sock, n);
     sendInteger(clnt_sock, e);
     printf("You can compare this with the public key on the receiver.\n");
     
+    //receive the encrypted seed.
     int buffer[SEED_LEN];
     unsigned char *s_b = (unsigned char *)buffer;
     recvSeed(s_b, SEED_LEN * sizeof(int), clnt_sock);
     printf("The encrypted seed is %d\n", buffer[0]);
     
+    //decrypt the seed.
     unsigned char outseed[SEED_LEN];
     memset(outseed, 0, sizeof(outseed));
     my_RSA_private_decrypt(SEED_LEN, buffer, outseed);
     printf("The origin seed is %s\n", outseed);
-    
-    //int c = receiveInteger(clnt_sock);
-    //printf("the char is %c\n", (char)(decode(c, d, n)));
     
     /*
     //1024-bits,RSA_F4-e_value,no callback
@@ -70,7 +72,7 @@ int main(){
     printf("The origin seed is %s\n",outseed);
     */
     
-    /*
+    
     //aes-key
     unsigned char aesSeed[32]; //If you use no-padding while encrypting the origin seed, it must be 128bytes, but we only need the first 32bytes.
     strncpy((char*)aesSeed,(const char*)outseed,32);
@@ -102,16 +104,16 @@ int main(){
         sendFile(fp,fsize,path,data_to_encrypt,data_after_encrypt,&AESEncryptKey,clnt_sock);
         fclose(fp);
     }
-    RSA_free(ClientRSA);
-    RSA_free(EncryptRsa);
-    */
+    //RSA_free(ClientRSA);
+    //RSA_free(EncryptRsa);
+    
     close(serv_sock);
     return 0;
 }
 
 void my_RSA_private_decrypt(int length, int* src, unsigned char* dst) {
     for(int i = 0; i < length; i++) {
-        dst[i] = (char)(decode(src[i], d, n));
+        dst[i] = (char)(my_RSA_decrypt_char(src[i], d, n));
     }
 }
 
@@ -133,7 +135,7 @@ void my_RSA_generate_key() {
     d = 2753;
 }
 
-int decode(int c, int d, int n) {
+int my_RSA_decrypt_char(int c, int d, int n) {
     int m = 1;
     for(int i = 0; i < d; i++) {
 	m = (m * c) % n;
