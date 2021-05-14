@@ -1,8 +1,10 @@
-
-
 #include "receiver.h"
 
+int n, e;
+int encode(int m, int e, int n);
+void sendInteger(int sock, int num);
 int receiveInteger(int sock);
+void my_RSA_public_encrypt(int length, unsigned char* src, int* dst);
 
 int main()
 {
@@ -23,6 +25,25 @@ int main()
     //try
     int tryReceive = receiveInteger(sock);
     printf("the number is %d!\n", tryReceive);
+    n = receiveInteger(sock);
+    e = receiveInteger(sock);
+    printf("the received public key is n = %d, e = %d.\n", n, e);
+    
+    unsigned char seed[SEED_LEN];
+    int outseed[SEED_LEN];
+    unsigned char ranstr[SEED_LEN];
+    memset(ranstr,0,128);
+    genSeed(ranstr);
+    strcpy((char*)seed,(const char*)ranstr);
+    my_RSA_public_encrypt(SEED_LEN, seed, outseed);
+    printf("The seed is %s\n\n\n\n\n", seed);
+    printf("The seed after encryption is %d\n\n\n\n\n", outseed[0]);
+    sendSeed((unsigned char*)outseed, SEED_LEN * sizeof(int), sock);
+    
+    //char c = 'z';
+    //sendInteger(sock, encode((int)c, e, n));
+    
+    /*
     //receive public key and key length
     unsigned char buffer[100000];
     unsigned char *b_f=buffer;
@@ -62,6 +83,9 @@ int main()
     }
     //send encrypted seed
     sendSeed(outseed,SEED_LEN,sock);
+    */
+    
+    /*
     unsigned char data_after_encrypt[16];
     unsigned char data_after_decrypt[16];
     unsigned char aesSeed[32];
@@ -75,8 +99,30 @@ int main()
         recvFile(data_after_encrypt,data_after_decrypt,&AESDecryptKey,sock);
     }
     RSA_free(EncryptRsa);
+    */
     close(sock);
     return 0;
+}
+
+void my_RSA_public_encrypt(int length, unsigned char* src, int* dst) {
+    for(int i = 0; i < length; i++) {
+        dst[i] = encode((int)(src[i]), e, n);
+    }
+}
+
+int encode(int m, int e, int n) {
+	//printf("encode function input: m=%d,e=%d, n=%d\n", m, e, n); 
+	int c = 1;
+	for(int i = 0; i < e; i++) {
+		c = (c * m) % n;
+	}
+	//printf("encode function output: c=%d\n", c);
+	return c;
+}
+
+void sendInteger(int sock, int num) {
+    char* data = (char*)(&num);
+    write(sock, data, sizeof(int));
 }
 
 int receiveInteger(int sock) {
