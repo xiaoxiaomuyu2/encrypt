@@ -4,6 +4,7 @@
 int n, d, e;//(n, e) is RSA public key. (n, d) is private key
 void sendInteger(int sock, int num);
 int receiveInteger(int sock);
+bool isPrime(int n);
 void my_RSA_generate_key();//generate public key and private key
 int my_RSA_decrypt_char(int c, int d, int n);//decrypt single char
 void my_RSA_private_decrypt(int length, int* src, unsigned char* dst);//decrypt string
@@ -130,9 +131,39 @@ int receiveInteger(int sock) {
 }
 
 void my_RSA_generate_key() {
+    int p, q;
+    do {
+        p = rand() % 200;
+    } while(!isPrime(p) || p < 20);
+    do {
+        q = rand() % 200;
+    } while(!isPrime(q) || q < 20 || p == q);
+    
+    printf("p = %d, q = %d\n", p, q);
+    
+    n = p * q;
+    int fn = (p - 1) * (q - 1);
+    printf("n = %d, fn = %d\n", n, fn);
+    
+    do {
+        e = rand() % 40000;
+    } while(!isPrime(e) || e <= 1 || e >= n);
+    
+    printf("e = %d\n", e);
+    
+    d = 1;
+    while((e * d - 1) % fn != 0) {
+	d++;
+    }
+    
+    printf("d = %d\n", d);
+    
+    
+    /*
     n = 3233;
     e = 17;
     d = 2753;
+    */
 }
 
 int my_RSA_decrypt_char(int c, int d, int n) {
@@ -141,4 +172,16 @@ int my_RSA_decrypt_char(int c, int d, int n) {
 	m = (m * c) % n;
     }
     return m;
+}
+
+bool isPrime(int n) {
+    if(n < 2) {
+    	return false;
+    }
+    for(int i = 2; i * i <= n; i++) {
+    	if(n % i == 0) {
+    	    return false;
+    	}
+    }
+    return true;
 }
